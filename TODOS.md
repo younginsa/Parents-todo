@@ -2,15 +2,7 @@
 
 Deferred work from `/plan-ceo-review` 2026-05-15. See `~/.gstack/projects/ParentsToDo/ceo-plans/2026-05-15-backend-integration.md` for full context.
 
-## P1 — Sign-out UI
-
-- **What**: Add Clerk's `<UserButton />` (or a custom menu invoking `signOut()` from `@clerk/nextjs`) to the workspace header so the user can log out. Right now the only way to "sign out" is to clear cookies manually.
-- **Why**: Basic auth hygiene. Also needed when testing the husband's flow on the same device.
-- **Pros**: ~10 min of work. Unblocks device sharing.
-- **Cons**: Need a small UI decision: drop in Clerk's pre-styled `<UserButton />` (terracotta accent may not match design system) or build a custom menu that calls `useClerk().signOut()`.
-- **Effort**: XS (human ~30 min / CC ~10 min).
-- **Priority**: P1.
-- **Depends on**: nothing.
+## ~~P1 — Sign-out UI~~ ✅ Done (commit c5e20b0)
 
 ## P1 — Husband invite flow
 
