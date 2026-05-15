@@ -4,19 +4,7 @@ Deferred work from `/plan-ceo-review` 2026-05-15. See `~/.gstack/projects/Parent
 
 ## ~~P1 — Sign-out UI~~ ✅ Done (commit c5e20b0)
 
-## P1 — Husband invite flow
-
-- **What**: Way for the husband to sign in and join Young's workspace as `dad` member without auto-creating a second workspace. Currently `ensureWorkspaceForUser` throws "워크스페이스가 이미 존재합니다" because the workspace already exists.
-- **Why**: The whole 2-user model is broken without this. Right now only the first user to sign in can use the app.
-- **Two design options**:
-  1. **Invite link**: Young generates an invite token from her profile menu; husband clicks the link before sign-in; Clerk afterUserCreated webhook attaches him to the workspace with `role: 'dad'`. Production-grade.
-  2. **Email allowlist auto-join**: Set `ALLOWED_EMAILS` env to both emails; on first sign-in for the 2nd email, auto-add to the existing workspace as `dad`. Quick hack for 2-user family scope.
-- **Recommended**: Option 2 first (15 min, fits 2-user scale). Add Option 1 later if scope grows.
-- **Pros**: Husband can actually use the app. Tests Scenario 2 sync end-to-end.
-- **Cons**: Option 2 hardcodes the role assignment (2nd user is always dad). Fine for this household.
-- **Effort**: S (human ~1 hr / CC ~15 min) for Option 2.
-- **Priority**: P1.
-- **Depends on**: nothing.
+## ~~P1 — Husband invite flow~~ ✅ Done (commit ae56815, household-cap auto-join)
 
 ## P2 — Vercel Blob retention for original screenshots
 
