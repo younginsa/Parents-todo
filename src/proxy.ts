@@ -17,9 +17,17 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
+  const isApiRoute = req.nextUrl.pathname.startsWith("/api/");
+
   const { userId, sessionClaims, redirectToSignIn } = await auth();
 
   if (!userId) {
+    if (isApiRoute) {
+      return NextResponse.json(
+        { error: { code: "UNAUTHORIZED", message: "Not signed in" } },
+        { status: 401 }
+      );
+    }
     return redirectToSignIn({ returnBackUrl: req.url });
   }
 
@@ -29,6 +37,12 @@ export default clerkMiddleware(async (auth, req) => {
       (sessionClaims?.primaryEmailAddress as string | undefined)?.toLowerCase();
 
     if (!email || !ALLOWED_EMAILS.includes(email)) {
+      if (isApiRoute) {
+        return NextResponse.json(
+          { error: { code: "FORBIDDEN", message: "Not invited" } },
+          { status: 403 }
+        );
+      }
       const denied = new URL("/login", req.url);
       denied.searchParams.set("reason", "not-invited");
       return NextResponse.redirect(denied);
