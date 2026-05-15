@@ -2,12 +2,16 @@ import { SignIn } from "@clerk/nextjs";
 import { APP_NAME } from "@/lib/config";
 
 interface LoginPageProps {
-  searchParams: Promise<{ reason?: string }>;
+  searchParams: Promise<{ reason?: string; return?: string }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const { reason } = await searchParams;
+  const { reason, return: returnTo } = await searchParams;
   const notInvited = reason === "not-invited";
+  const safeReturnTo =
+    returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//")
+      ? returnTo
+      : "/";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">
@@ -32,10 +36,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
         <SignIn
           routing="hash"
+          forceRedirectUrl={safeReturnTo}
           appearance={{
             elements: {
               rootBox: "w-full",
               card: "shadow-md border border-line bg-surface rounded-lg",
+              footer: { display: "none" },
             },
           }}
         />

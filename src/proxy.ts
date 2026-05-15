@@ -19,7 +19,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   const isApiRoute = req.nextUrl.pathname.startsWith("/api/");
 
-  const { userId, sessionClaims, redirectToSignIn } = await auth();
+  const { userId, sessionClaims } = await auth();
 
   if (!userId) {
     if (isApiRoute) {
@@ -28,7 +28,12 @@ export default clerkMiddleware(async (auth, req) => {
         { status: 401 }
       );
     }
-    return redirectToSignIn({ returnBackUrl: req.url });
+    const loginUrl = new URL("/login", req.url);
+    const returnTo = req.nextUrl.pathname + req.nextUrl.search;
+    if (returnTo && returnTo !== "/") {
+      loginUrl.searchParams.set("return", returnTo);
+    }
+    return NextResponse.redirect(loginUrl);
   }
 
   if (ALLOWED_EMAILS.length > 0) {
