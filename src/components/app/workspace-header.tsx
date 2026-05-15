@@ -8,14 +8,14 @@ import {
   ChevronRight,
   Globe,
   LogOut,
-  Settings2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useClerk } from "@clerk/nextjs";
 import { useAppState } from "@/components/providers/app-state-provider";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
-type ProfileView = "root" | "settings" | "language";
+type ProfileView = "root" | "language";
 
 export function WorkspaceHeader({
   title,
@@ -35,6 +35,19 @@ export function WorkspaceHeader({
     setLocale,
   } = useAppState();
   const { t } = useI18n();
+  const { signOut } = useClerk();
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut({ redirectUrl: "/login" });
+    } catch (err) {
+      console.error("signOut failed", err);
+      setSigningOut(false);
+    }
+  }
 
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -199,15 +212,6 @@ export function WorkspaceHeader({
                   <div className="mt-2">
                     <button
                       type="button"
-                      onClick={() => setProfileView("settings")}
-                      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold text-foreground hover:bg-surface-strong focus-visible:bg-surface-strong focus-visible:outline-none"
-                    >
-                      <Settings2 className="h-4 w-4 text-brand" />
-                      <span className="flex-1">{t("settings")}</span>
-                      <ChevronRight className="h-4 w-4 text-muted" />
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setProfileView("language")}
                       className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold text-foreground hover:bg-surface-strong focus-visible:bg-surface-strong focus-visible:outline-none"
                     >
@@ -215,31 +219,15 @@ export function WorkspaceHeader({
                       <span className="flex-1">{t("language")}</span>
                       <ChevronRight className="h-4 w-4 text-muted" />
                     </button>
-                  </div>
-                </>
-              ) : null}
-
-              {profileView === "settings" ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setProfileView("root")}
-                    className="flex w-full items-center gap-2 rounded-md px-3 py-3 text-left text-sm font-semibold text-foreground hover:bg-surface-strong focus-visible:bg-surface-strong focus-visible:outline-none"
-                  >
-                    <ChevronLeft className="h-4 w-4 text-muted" />
-                    <span>{t("settings")}</span>
-                  </button>
-                  <div className="mt-1 space-y-1">
                     <button
                       type="button"
-                      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold text-foreground hover:bg-surface-strong focus-visible:bg-surface-strong focus-visible:outline-none"
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm font-semibold text-foreground hover:bg-surface-strong focus-visible:bg-surface-strong focus-visible:outline-none disabled:opacity-50"
                     >
                       <LogOut className="h-4 w-4 text-muted" />
-                      <span>{t("sign_out")}</span>
+                      <span className="flex-1">{t("sign_out")}</span>
                     </button>
-                    <p className="px-3 py-2 text-xs text-muted">
-                      {t("settings_coming_soon")}
-                    </p>
                   </div>
                 </>
               ) : null}
