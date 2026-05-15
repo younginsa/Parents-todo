@@ -95,6 +95,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       return;
     }
+    if (res.status === 403) {
+      router.replace("/login?reason=not-invited");
+      return;
+    }
     if (!res.ok) {
       console.error("Failed to load /api/state", res.status);
       return;

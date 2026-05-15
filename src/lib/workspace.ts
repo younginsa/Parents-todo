@@ -41,6 +41,8 @@ export async function getWorkspaceForUser(): Promise<WorkspaceContext> {
   return ctx;
 }
 
+const HOUSEHOLD_MEMBER_CAP = 2;
+
 export async function ensureWorkspaceForUser(): Promise<WorkspaceContext> {
   const { userId } = await auth();
   if (!userId) {
@@ -55,42 +57,61 @@ export async function ensureWorkspaceForUser(): Promise<WorkspaceContext> {
     user?.firstName?.trim() ||
     user?.username?.trim() ||
     user?.emailAddresses[0]?.emailAddress.split("@")[0] ||
-    "엄마";
+    "사용자";
 
-  const childNameDefault = `${displayName}'s 알림장`;
+  const allWorkspaces = await db.select().from(workspaces).limit(1);
+  const existingWorkspace = allWorkspaces[0];
 
-  const [{ count }] = await db
+  // No workspace yet — first sign-in. Create workspace, user becomes mom.
+  if (!existingWorkspace) {
+    const [newWorkspace] = await db
+      .insert(workspaces)
+      .values({
+        name: `${displayName}'s 알림장`,
+        childName: displayName,
+        avatarLabel: displayName.slice(0, 1).toUpperCase(),
+        createdByClerkUserId: userId,
+      })
+      .returning();
+
+    const [newMember] = await db
+      .insert(workspaceMembers)
+      .values({
+        workspaceId: newWorkspace.id,
+        clerkUserId: userId,
+        role: "mom",
+        displayName,
+      })
+      .returning();
+
+    return { userId, workspace: newWorkspace, member: newMember };
+  }
+
+  // Workspace exists. Auto-join if there's room (household cap = 2).
+  const memberCount = await db
     .select({ count: sql<number>`cast(count(*) as int)` })
-    .from(workspaces);
+    .from(workspaceMembers)
+    .where(eq(workspaceMembers.workspaceId, existingWorkspace.id));
 
-  if (count > 0) {
+  if (memberCount[0].count >= HOUSEHOLD_MEMBER_CAP) {
     throw new AuthError(
       403,
-      "워크스페이스가 이미 존재합니다. 관리자에게 초대를 요청하세요."
+      "이 워크스페이스는 이미 가족 구성원이 모두 등록되어 있어요. 관리자에게 문의해 주세요."
     );
   }
 
-  const [newWorkspace] = await db
-    .insert(workspaces)
-    .values({
-      name: childNameDefault,
-      childName: displayName,
-      avatarLabel: displayName.slice(0, 1).toUpperCase(),
-      createdByClerkUserId: userId,
-    })
-    .returning();
-
+  // Second user joins existing workspace as dad.
   const [newMember] = await db
     .insert(workspaceMembers)
     .values({
-      workspaceId: newWorkspace.id,
+      workspaceId: existingWorkspace.id,
       clerkUserId: userId,
-      role: "mom",
+      role: "dad",
       displayName,
     })
     .returning();
 
-  return { userId, workspace: newWorkspace, member: newMember };
+  return { userId, workspace: existingWorkspace, member: newMember };
 }
 
 export async function assertWorkspaceMember(
