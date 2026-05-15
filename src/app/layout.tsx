@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Manrope, Noto_Sans_KR } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ui } from "@clerk/ui";
 import "./globals.css";
 import { APP_NAME } from "@/lib/config";
 
@@ -39,7 +40,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider ui={ui}>
       <html
         lang="ko"
         className={`${bodyFont.variable} ${headingFont.variable} ${displayFont.variable} h-full antialiased`}
