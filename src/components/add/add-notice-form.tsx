@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ReviewSection } from "@/components/add/review-section";
 import { SegmentedControl } from "@/components/app/segmented-control";
 import { useAppState } from "@/components/providers/app-state-provider";
@@ -11,7 +11,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { DEMO_TODAY } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import type { ParseNoticePayload, ParsedNotice } from "@/types";
+import type { ParsedNotice } from "@/types";
+
+const PARSE_STATUSES = ["분석 중...", "일정 정리 중...", "할 일 정리 중...", "준비물 정리 중..."];
+
+function fileToBase64(file: File): Promise<{ base64: string; mimeType: string }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("FileReader returned non-string"));
+        return;
+      }
+      const [meta, base64] = result.split(",", 2);
+      const mimeType = meta.match(/data:([^;]+);base64/)?.[1] ?? file.type ?? "image/png";
+      resolve({ base64, mimeType });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 type ReviewSectionKey =
   | "events"
@@ -28,7 +48,18 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
   const [noteText, setNoteText] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [parseStatusIndex, setParseStatusIndex] = useState(0);
+  const [parseError, setParseError] = useState<string | null>(null);
   const [parsedNotice, setParsedNotice] = useState<ParsedNotice | null>(null);
+
+  useEffect(() => {
+    if (!isParsing) return;
+    setParseStatusIndex(0);
+    const id = setInterval(() => {
+      setParseStatusIndex((i) => (i + 1) % PARSE_STATUSES.length);
+    }, 1800);
+    return () => clearInterval(id);
+  }, [isParsing]);
 
   function updateSection(
     section: ReviewSectionKey,
@@ -64,17 +95,25 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
 
   async function organizeWithAi() {
     setIsParsing(true);
+    setParseError(null);
+    setParsedNotice(null);
 
     try {
-      const payload: ParseNoticePayload = {
+      const payload: Record<string, unknown> = {
         baseDate,
         sourceType: inputMode,
-        text: inputMode === "text" ? noteText : undefined,
-        fileName:
-          inputMode === "image" && uploadedFiles.length > 0
-            ? uploadedFiles[0].name
-            : undefined,
       };
+
+      if (inputMode === "text") {
+        payload.text = noteText;
+      } else {
+        if (uploadedFiles.length === 0) {
+          throw new Error("스크린샷이 선택되지 않았습니다");
+        }
+        const { base64, mimeType } = await fileToBase64(uploadedFiles[0]);
+        payload.imageBase64 = base64;
+        payload.imageMimeType = mimeType;
+      }
 
       const response = await fetch("/api/parse-notice", {
         method: "POST",
@@ -82,8 +121,19 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
         body: JSON.stringify(payload),
       });
 
-      const data = (await response.json()) as { parsed: ParsedNotice };
-      setParsedNotice(data.parsed);
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as
+          | { error?: { message?: string } }
+          | null;
+        throw new Error(body?.error?.message ?? `API ${response.status}`);
+      }
+
+      const json = (await response.json()) as { data: { parsed: ParsedNotice } };
+      setParsedNotice(json.data.parsed);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "알 수 없는 오류";
+      setParseError(message);
+      console.error("parse-notice failed:", err);
     } finally {
       setIsParsing(false);
     }
@@ -214,6 +264,30 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
         )}
         {isParsing ? t("organizing") : t("organize_ai")}
       </Button>
+
+      {isParsing ? (
+        <div className="flex flex-col gap-3 border-t border-line pt-5">
+          <div className="rounded-lg border border-line bg-surface p-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin text-brand" />
+              <p className="text-body text-foreground" style={{ fontWeight: 500 }}>
+                {PARSE_STATUSES[parseStatusIndex]}
+              </p>
+            </div>
+            <div className="mt-4 flex flex-col gap-2">
+              <div className="h-3 w-2/3 animate-pulse rounded bg-surface-strong" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-surface-strong" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-surface-strong" />
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {parseError ? (
+        <div className="rounded-md border border-danger/40 bg-danger-soft p-3 text-body-sm text-danger">
+          {parseError}
+        </div>
+      ) : null}
 
       {parsedNotice ? (
         <div className="flex flex-col gap-6 border-t border-line pt-5">

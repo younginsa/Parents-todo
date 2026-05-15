@@ -39,6 +39,10 @@ yarn-error.log*
 # claude code
 .claude/
 
+# clerk keyless tmp (contains unclaimed secret)
+.clerk/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.gstack/

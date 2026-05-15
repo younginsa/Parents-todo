@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Manrope, Noto_Sans_KR } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { APP_NAME } from "@/lib/config";
 
@@ -38,13 +39,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ko"
-      className={`${bodyFont.variable} ${headingFont.variable} ${displayFont.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="ko"
+        className={`${bodyFont.variable} ${headingFont.variable} ${displayFont.variable} h-full antialiased`}
+      >
+        <body className="min-h-full flex flex-col bg-background text-foreground">
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

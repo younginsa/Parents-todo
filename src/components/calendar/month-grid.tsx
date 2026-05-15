@@ -88,8 +88,9 @@ export function MonthGrid({
                 id: item.id,
                 title: item.title,
                 tone: "packing" as const,
+                completedAt: item.completedAt,
               })),
-          ].slice(0, 2);
+          ].slice(0, 3);
 
           const eventCount = events.filter((event) => sameDay(event.date, dayKey)).length;
           const taskCount =
@@ -155,7 +156,7 @@ export function MonthGrid({
               )}
 
               {!isOtherMonth && (eventCount || taskCount || importantCount) ? (
-                <div className="flex items-center gap-1 px-1">
+                <div className="flex items-center gap-1 px-1 md:hidden">
                   {eventCount ? (
                     <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                   ) : null}
@@ -180,11 +181,14 @@ export function MonthGrid({
                           (entry.completedAt
                             ? "bg-brand-soft text-muted"
                             : "bg-brand-soft text-brand"),
-                        entry.tone === "packing" && "bg-surface-strong text-foreground",
+                        entry.tone === "packing" &&
+                          (entry.completedAt
+                            ? "bg-brand-soft text-muted"
+                            : "bg-brand-soft text-brand"),
                         entry.tone === "birthday" && "bg-brand-soft text-brand",
                       )}
                     >
-                      {entry.tone === "task" ? (
+                      {entry.tone === "task" || entry.tone === "packing" ? (
                         entry.completedAt ? (
                           <CheckSquare className="h-3 w-3 shrink-0 text-brand" />
                         ) : (
