@@ -56,7 +56,7 @@ export function MonthGrid({
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-1 sm:gap-1.5">
+      <div className="grid grid-cols-7 overflow-hidden rounded-md border-l border-t border-line/30">
         {days.map((day) => {
           const dayKey = format(day, "yyyy-MM-dd");
           const dayBirthdays = BIRTHDAYS.filter(
@@ -127,10 +127,9 @@ export function MonthGrid({
               type="button"
               onClick={() => onSelectDate(dayKey)}
               className={cn(
-                "flex min-h-[3.25rem] flex-col items-start gap-1 rounded-md border border-line/30 p-1 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-[3.5rem] sm:p-1.5 md:min-h-[6rem]",
+                "flex min-h-[3.25rem] flex-col items-start gap-1 border-b border-r border-line/30 p-1 text-left transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:min-h-[3.5rem] sm:p-1.5 md:min-h-[6rem]",
                 hasContent && !isOtherMonth && "bg-brand-soft",
-                isOtherMonth && "border-transparent",
-                isSelected && "ring-2 ring-brand/40",
+                isSelected && "z-10 ring-2 ring-inset ring-brand/40",
                 !isSelected && "hover:bg-surface-strong",
               )}
             >
