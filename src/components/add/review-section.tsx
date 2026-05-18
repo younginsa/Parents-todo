@@ -65,7 +65,7 @@ export function ReviewSection({
                   placeholder="Title"
                 />
 
-                <div className="grid grid-cols-[1fr_120px] gap-3">
+                <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
                   <Input
                     type="date"
                     value={item.date ?? ""}
@@ -79,7 +79,7 @@ export function ReviewSection({
                     onChange={(event) =>
                       onUpdate(item.id, { [categoryKey]: event.target.value })
                     }
-                    className="h-11 rounded-md border border-line bg-surface px-3 text-sm transition focus-visible:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/40"
+                    className="h-11 w-full rounded-md border border-line bg-surface px-3 text-sm transition focus-visible:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/40"
                   >
                     {categoryOptions.map((option) => (
                       <option key={option.value} value={option.value}>
