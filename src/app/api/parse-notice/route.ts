@@ -12,6 +12,11 @@ const uncertainCategory = z.enum(["event", "task", "packing", "reference"]);
 const parsedNoticeSchema = z.object({
   title: z.string().describe("알림장 제목 (간결한 한 줄)"),
   summary: z.string().describe("알림장 핵심 내용 1-2문장 요약"),
+  transcribedText: z
+    .string()
+    .describe(
+      "이미지 입력인 경우: 알림장 스크린샷의 전체 텍스트를 원문 그대로 (이모지·섹션 헤더·줄바꿈 포함) 옮겨 적으세요. 여러 장이면 위에서 아래로 자연스럽게 이어 붙이고, 같은 내용이 중복으로 보이면 한 번만 적으세요. 텍스트 입력인 경우에는 빈 문자열 ('')을 반환하세요 (원문이 이미 보존되어 있습니다)."
+    ),
   noticeDistributionDate: z
     .string()
     .nullable()
@@ -79,12 +84,16 @@ const parsedNoticeSchema = z.object({
   ),
 });
 
+const imageSchema = z.object({
+  base64: z.string(),
+  mimeType: z.string().optional(),
+});
+
 const bodySchema = z.object({
   baseDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   sourceType: z.enum(["text", "image"]),
   text: z.string().optional(),
-  imageBase64: z.string().optional(),
-  imageMimeType: z.string().optional(),
+  images: z.array(imageSchema).optional(),
 });
 
 const SYSTEM_PROMPT = `당신은 한국 유치원/어린이집 알림장을 분석하는 도우미입니다.
@@ -176,7 +185,7 @@ export async function POST(request: Request) {
     if (body.sourceType === "text" && (!body.text || body.text.trim().length === 0)) {
       return fail(400, "BAD_REQUEST", "텍스트가 비어 있습니다");
     }
-    if (body.sourceType === "image" && !body.imageBase64) {
+    if (body.sourceType === "image" && (!body.images || body.images.length === 0)) {
       return fail(400, "BAD_REQUEST", "이미지가 없습니다");
     }
 
@@ -186,12 +195,15 @@ export async function POST(request: Request) {
       body.sourceType === "text"
         ? `${userPrompt}\n\n알림장 내용:\n${body.text}`
         : [
-            { type: "text" as const, text: `${userPrompt}\n\n다음 알림장 스크린샷을 분석해 주세요:` },
             {
-              type: "image" as const,
-              image: body.imageBase64!,
-              mediaType: body.imageMimeType ?? "image/png",
+              type: "text" as const,
+              text: `${userPrompt}\n\n다음은 같은 알림장의 스크린샷 ${body.images!.length}장입니다 (위에서 아래 순서). 전체를 하나의 알림장으로 보고 분석하세요:`,
             },
+            ...body.images!.map((img) => ({
+              type: "image" as const,
+              image: img.base64,
+              mediaType: img.mimeType ?? "image/png",
+            })),
           ];
 
     const result = await generateObject({

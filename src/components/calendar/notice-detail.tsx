@@ -615,9 +615,7 @@ export function NoticeDetail({
 
             <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
               <div className="rounded-md border border-line bg-surface-strong px-4 py-3 text-sm text-muted">
-                {selectedNotice.sourceType === "image"
-                  ? "이미지 업로드 원문은 데모 모드에서 텍스트로 대체되어 표시됩니다."
-                  : selectedNotice.summary}
+                {selectedNotice.summary}
               </div>
               <pre className="whitespace-pre-wrap rounded-md border border-line bg-white px-4 py-4 text-sm leading-7 text-foreground">
                 {selectedNotice.rawText}

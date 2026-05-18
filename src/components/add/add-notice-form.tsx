@@ -130,9 +130,7 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
         if (uploadedFiles.length === 0) {
           throw new Error("스크린샷이 선택되지 않았습니다");
         }
-        const { base64, mimeType } = await fileToBase64(uploadedFiles[0]);
-        payload.imageBase64 = base64;
-        payload.imageMimeType = mimeType;
+        payload.images = await Promise.all(uploadedFiles.map(fileToBase64));
       }
 
       const response = await fetch("/api/parse-notice", {
@@ -181,14 +179,15 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
   function save(status: "saved" | "draft") {
     if (!parsedNotice) return;
 
+    const transcribed = parsedNotice.transcribedText?.trim() ?? "";
     saveParsedNotice({
       parsed: parsedNotice,
       rawText:
         inputMode === "text"
           ? noteText
-          : uploadedFiles.length > 0
-            ? `Screenshot upload: ${uploadedFiles.map((f) => f.name).join(", ")}`
-            : "Screenshot upload (demo mode)",
+          : transcribed.length > 0
+            ? transcribed
+            : `Screenshot upload: ${uploadedFiles.map((f) => f.name).join(", ")}`,
       baseDate: pickerValue,
       sourceType: inputMode,
       status,
