@@ -138,15 +138,20 @@ export function NoticeDetail({
 
   const prioritizedItems = useMemo<ActionItem[]>(() => {
     return [
-      ...noticeScoped.packingItems.map((item) => ({
-        ...item,
-        kind: "packing" as const,
-      })),
-      ...noticeScoped.tasks.map((item) => ({ ...item, kind: "task" as const })),
+      ...noticeScoped.packingItems
+        .filter((item) => sameDay(item.date, selectedDate))
+        .map((item) => ({ ...item, kind: "packing" as const })),
+      ...noticeScoped.tasks
+        .filter((item) => sameDay(item.date, selectedDate))
+        .map((item) => ({ ...item, kind: "task" as const })),
     ]
       .sort((a, b) => (a.date ?? "9999-12-31").localeCompare(b.date ?? "9999-12-31"))
       .slice(0, 5);
-  }, [noticeScoped]);
+  }, [noticeScoped, selectedDate]);
+
+  const isNoticeDay = selectedNotice
+    ? sameDay(selectedNotice.baseDate, selectedDate)
+    : false;
 
   const policyReferences = noticeScoped.references.filter(
     (item) => item.category === "policy" || item.category === "notice",
@@ -313,20 +318,23 @@ export function NoticeDetail({
                         </div>
                       ) : null}
 
-                      <div className="flex items-start gap-3">
-                        <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium text-muted">
-                            {t("source_label")}
-                          </p>
-                          <p className="mt-1 text-[14px] font-medium text-foreground">
-                            {selectedNotice.title}
-                          </p>
+                      {isNoticeDay ? (
+                        <div className="flex items-start gap-3">
+                          <FileText className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[13px] font-medium text-muted">
+                              {t("source_label")}
+                            </p>
+                            <p className="mt-1 text-[14px] font-medium text-foreground">
+                              {selectedNotice.title}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      ) : null}
                     </div>
                   </section>
 
+                  {prioritizedItems.length > 0 ? (
                   <section className="space-y-3 rounded-md border border-line p-5">
                     <div>
                       <h2 className="text-[18px] font-semibold text-foreground">
@@ -379,6 +387,7 @@ export function NoticeDetail({
                       })}
                     </div>
                   </section>
+                  ) : null}
 
                   <section className="space-y-4">
                     <h2 className="text-[18px] font-semibold text-foreground">
