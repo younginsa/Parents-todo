@@ -38,11 +38,12 @@ export function MonthGrid({
 
   return (
     <div>
-      <div className="grid grid-cols-7 gap-1 px-1 pb-3 text-center text-caption">
+      <div className="grid grid-cols-7 gap-1 px-1 pb-3 text-left text-xs">
         {getWeekdayLabels(locale).map((label, index) => (
           <div
             key={label}
             className={cn(
+              "px-1",
               index === 0
                 ? "text-danger/70"
                 : index === 6
@@ -126,8 +127,9 @@ export function MonthGrid({
               type="button"
               onClick={() => onSelectDate(dayKey)}
               className={cn(
-                "flex min-h-[3.25rem] flex-col items-start gap-1 rounded-md p-1 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-[3.5rem] sm:p-1.5 md:min-h-[6rem]",
+                "flex min-h-[3.25rem] flex-col items-start gap-1 rounded-md border border-line/30 p-1 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-[3.5rem] sm:p-1.5 md:min-h-[6rem]",
                 hasContent && !isOtherMonth && "bg-brand-soft",
+                isOtherMonth && "border-transparent",
                 isSelected && "ring-2 ring-brand/40",
                 !isSelected && "hover:bg-surface-strong",
               )}
