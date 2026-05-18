@@ -64,6 +64,7 @@ export interface UncertainItem extends BaseItem {
 export interface ParsedNotice {
   title: string;
   summary: string;
+  noticeDistributionDate?: string | null;
   events: EventItem[];
   tasks: TaskItem[];
   packingItems: PackingItem[];

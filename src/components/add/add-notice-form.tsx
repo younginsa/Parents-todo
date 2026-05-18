@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Sparkles, X } from "lucide-react";
+import { CalendarDays, Loader2, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ReviewSection } from "@/components/add/review-section";
 import { SegmentedControl } from "@/components/app/segmented-control";
@@ -12,6 +12,20 @@ import { DEMO_TODAY } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { ParsedNotice } from "@/types";
+
+function resolveSourceKey(
+  pickerValue: string,
+  noticeDistributionDate: string | null | undefined,
+  today: string,
+): "extracted" | "today" | "manual" {
+  if (noticeDistributionDate && pickerValue === noticeDistributionDate) {
+    return "extracted";
+  }
+  if (pickerValue === today) {
+    return "today";
+  }
+  return "manual";
+}
 
 const PARSE_STATUSES = ["분석 중...", "일정 정리 중...", "할 일 정리 중...", "준비물 정리 중..."];
 
@@ -45,9 +59,11 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
   const { t } = useI18n();
   const [inputMode, setInputMode] = useState<"text" | "image">("text");
   const [baseDate, setBaseDate] = useState(DEMO_TODAY);
+  const [pickerValue, setPickerValue] = useState(DEMO_TODAY);
   const [noteText, setNoteText] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isParsing, setIsParsing] = useState(false);
+  const [isReparsing, setIsReparsing] = useState(false);
   const [parseStatusIndex, setParseStatusIndex] = useState(0);
   const [parseError, setParseError] = useState<string | null>(null);
   const [parsedNotice, setParsedNotice] = useState<ParsedNotice | null>(null);
@@ -93,14 +109,18 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
-  async function organizeWithAi() {
-    setIsParsing(true);
+  async function runParse(forBaseDate: string, mode: "initial" | "reparse") {
+    if (mode === "initial") {
+      setIsParsing(true);
+      setParsedNotice(null);
+    } else {
+      setIsReparsing(true);
+    }
     setParseError(null);
-    setParsedNotice(null);
 
     try {
       const payload: Record<string, unknown> = {
-        baseDate,
+        baseDate: forBaseDate,
         sourceType: inputMode,
       };
 
@@ -129,14 +149,33 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
       }
 
       const json = (await response.json()) as { data: { parsed: ParsedNotice } };
-      setParsedNotice(json.data.parsed);
+      const parsed = json.data.parsed;
+      setParsedNotice(parsed);
+      setBaseDate(forBaseDate);
+      // Sync the picker to the resolved date so the snap-back behavior works:
+      // if GPT extracted a date, pickerValue reflects that; otherwise stays at forBaseDate.
+      setPickerValue(parsed.noticeDistributionDate ?? forBaseDate);
     } catch (err) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
       setParseError(message);
       console.error("parse-notice failed:", err);
     } finally {
-      setIsParsing(false);
+      if (mode === "initial") {
+        setIsParsing(false);
+      } else {
+        setIsReparsing(false);
+      }
     }
+  }
+
+  async function organizeWithAi() {
+    await runParse(DEMO_TODAY, "initial");
+  }
+
+  function handlePickerBlur() {
+    if (!parsedNotice) return;
+    if (pickerValue === baseDate) return;
+    void runParse(pickerValue, "reparse");
   }
 
   function save(status: "saved" | "draft") {
@@ -150,7 +189,7 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
           : uploadedFiles.length > 0
             ? `Screenshot upload: ${uploadedFiles.map((f) => f.name).join(", ")}`
             : "Screenshot upload (demo mode)",
-      baseDate,
+      baseDate: pickerValue,
       sourceType: inputMode,
       status,
     });
@@ -174,21 +213,6 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
           { label: t("upload_screenshot"), value: "image" },
         ]}
       />
-
-      <div className="flex w-full flex-col gap-2">
-        <p
-          className="text-sm text-foreground"
-          style={{ fontWeight: 500 }}
-        >
-          {t("base_date")}
-        </p>
-        <Input
-          type="date"
-          value={baseDate}
-          onChange={(event) => setBaseDate(event.target.value)}
-          className="border-[#E8E8E8]"
-        />
-      </div>
 
       {inputMode === "text" ? (
         <Textarea
@@ -291,6 +315,42 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
 
       {parsedNotice ? (
         <div className="flex flex-col gap-6 border-t border-line pt-5">
+          <div className="flex items-start gap-3 rounded-lg border border-line bg-surface p-4">
+            <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-brand" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-foreground" style={{ fontWeight: 500 }}>
+                {t("base_date")}
+              </p>
+              <Input
+                type="date"
+                value={pickerValue}
+                onChange={(event) => setPickerValue(event.target.value)}
+                onBlur={handlePickerBlur}
+                disabled={isReparsing}
+                className="mt-1 border-line"
+              />
+              <p className="mt-2 text-body-sm text-muted">
+                {isReparsing ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {t("reanalyzing")}
+                  </span>
+                ) : (
+                  t(
+                    `date_source_${resolveSourceKey(
+                      pickerValue,
+                      parsedNotice.noticeDistributionDate,
+                      DEMO_TODAY,
+                    )}` as
+                      | "date_source_extracted"
+                      | "date_source_today"
+                      | "date_source_manual",
+                  )
+                )}
+              </p>
+            </div>
+          </div>
+
           <div className="rounded-lg border border-line bg-brand-soft p-4">
             <p className="font-semibold">{parsedNotice.title}</p>
             <p className="mt-1 text-body-sm text-muted">
@@ -392,7 +452,12 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
           />
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Button type="button" size="lg" onClick={() => save("saved")}>
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => save("saved")}
+              disabled={isReparsing}
+            >
               {t("save_to_calendar")}
             </Button>
             <Button
@@ -400,6 +465,7 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
               size="lg"
               variant="secondary"
               onClick={() => save("draft")}
+              disabled={isReparsing}
             >
               {t("save_as_draft")}
             </Button>
