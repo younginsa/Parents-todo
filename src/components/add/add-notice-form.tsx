@@ -180,14 +180,15 @@ export function AddNoticeForm({ onSaved }: { onSaved: () => void }) {
     if (!parsedNotice) return;
 
     const transcribed = parsedNotice.transcribedText?.trim() ?? "";
+    const filenameLine = `📎 ${uploadedFiles.map((f) => f.name).join(", ")}`;
     saveParsedNotice({
       parsed: parsedNotice,
       rawText:
         inputMode === "text"
           ? noteText
           : transcribed.length > 0
-            ? transcribed
-            : `Screenshot upload: ${uploadedFiles.map((f) => f.name).join(", ")}`,
+            ? `${filenameLine}\n\n${transcribed}`
+            : filenameLine,
       baseDate: pickerValue,
       sourceType: inputMode,
       status,

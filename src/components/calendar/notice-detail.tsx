@@ -23,18 +23,20 @@ type ActionItem =
   | ({ kind: "task" } & TaskItem)
   | ({ kind: "packing" } & PackingItem);
 
-type Priority = "urgent" | "upcoming" | "due";
+type Priority = "urgent" | "upcoming" | "scheduled" | "past";
 
 const PRIORITY_CHIP_CLASS: Record<Priority, string> = {
   urgent: "bg-danger-soft text-danger",
   upcoming: "bg-brand-soft text-brand",
-  due: "bg-foreground/10 text-foreground/80",
+  scheduled: "bg-foreground/10 text-foreground/80",
+  past: "bg-foreground/5 text-muted",
 };
 
 const PRIORITY_LABEL_KEY = {
   urgent: "priority_urgent",
   upcoming: "priority_upcoming",
-  due: "priority_due",
+  scheduled: "priority_scheduled",
+  past: "priority_past",
 } as const;
 
 function computePriorityMap(dates: string[]): Map<string, Priority> {
@@ -59,14 +61,14 @@ function computePriorityMap(dates: string[]): Map<string, Priority> {
 
     const delta = differenceInCalendarDays(parseISO(d), today);
     if (delta < 0) {
-      result.set(d, "due");
+      result.set(d, "past");
       continue;
     }
 
     if (urgentDelta !== null && delta - urgentDelta <= 3) {
       result.set(d, "upcoming");
     } else {
-      result.set(d, "due");
+      result.set(d, "scheduled");
     }
   }
 
@@ -430,7 +432,7 @@ export function NoticeDetail({
                             })),
                           ];
 
-                          const priority = priorityMap.get(date) ?? "due";
+                          const priority = priorityMap.get(date) ?? "scheduled";
 
                           return (
                             <div

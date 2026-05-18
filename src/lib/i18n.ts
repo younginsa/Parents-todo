@@ -93,7 +93,8 @@ const messages = {
     empty_this_week_message: "이번 주는 여유로워요 🌿",
     priority_urgent: "가장 급함",
     priority_upcoming: "미리 준비",
-    priority_due: "예정",
+    priority_scheduled: "예정",
+    priority_past: "지난 일정",
     notice_modal_footer:
       "원본 공지를 기준으로 재정리한 페이지입니다. 날짜는 현재 데모 기준일({date})에 맞춰 표시됩니다.",
     detail_panel: "선택 날짜 상세",
@@ -215,7 +216,8 @@ const messages = {
     empty_this_week_message: "This week is light 🌿",
     priority_urgent: "Most urgent",
     priority_upcoming: "Coming up",
-    priority_due: "Scheduled",
+    priority_scheduled: "Scheduled",
+    priority_past: "Past",
     notice_modal_footer:
       "Reorganized from the original notice. Dates are shown relative to the demo today ({date}).",
     detail_panel: "Selected day details",
