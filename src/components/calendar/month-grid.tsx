@@ -111,6 +111,7 @@ export function MonthGrid({
           const isOtherMonth = !isSameMonth(day, month);
           const hasBirthday = dayBirthdays.length > 0;
           const hasContent = eventCount > 0 || taskCount > 0 || hasBirthday;
+          const hasTintableContent = eventCount > 0 || taskCount > 0;
 
           const dayOfWeek = day.getDay();
           const isSunday = dayOfWeek === 0;
@@ -128,7 +129,7 @@ export function MonthGrid({
               onClick={() => onSelectDate(dayKey)}
               className={cn(
                 "flex min-h-[3.25rem] flex-col items-start gap-1 border-b border-r border-line/30 p-1 text-left transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/60 sm:min-h-[3.5rem] sm:p-1.5 md:min-h-[6rem]",
-                hasContent && !isOtherMonth && "bg-brand-soft",
+                hasTintableContent && !isOtherMonth && "bg-brand-soft",
                 isSelected && "z-10 ring-2 ring-inset ring-brand/40",
                 !isSelected && "hover:bg-surface-strong",
               )}
