@@ -96,7 +96,7 @@ export default function CalendarPage() {
         }
       />
 
-      <Card>
+      <Card className="border-line/30 shadow-none!">
         <CardContent className="p-4 sm:p-5">
           <MonthGrid
             monthDate={monthDate}
