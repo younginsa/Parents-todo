@@ -172,6 +172,11 @@ export function NoticeDetail({
     sameDay(item.date, selectedDate),
   );
 
+  const hasDayContent =
+    selectedDayEvents.length > 0 ||
+    selectedDayTasks.length > 0 ||
+    selectedDayPacking.length > 0;
+
   const timelineGroups = groupByDate([
     ...noticeScoped.events,
     ...noticeScoped.tasks,
@@ -210,7 +215,7 @@ export function NoticeDetail({
               {dateTitle}
             </Dialog.Title>
             <div className="flex items-center gap-2">
-              {selectedNotice ? (
+              {selectedNotice && isNoticeDay ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -233,7 +238,7 @@ export function NoticeDetail({
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-6">
-            {!selectedNotice ? (
+            {!selectedNotice || (!isNoticeDay && !hasDayContent) ? (
               <p className="text-[14px] text-muted">{t("no_source_notice")}</p>
             ) : (
               <>
@@ -336,7 +341,7 @@ export function NoticeDetail({
                     </div>
                   </section>
 
-                  {prioritizedItems.length > 0 ? (
+                  {isNoticeDay && prioritizedItems.length > 0 ? (
                   <section className="space-y-3 rounded-md border border-line p-5">
                     <div>
                       <h2 className="text-[18px] font-semibold text-foreground">
@@ -391,6 +396,7 @@ export function NoticeDetail({
                   </section>
                   ) : null}
 
+                  {isNoticeDay ? (
                   <section className="space-y-4">
                     <h2 className="text-[18px] font-semibold text-foreground">
                       {t("timeline_title")}
@@ -491,7 +497,9 @@ export function NoticeDetail({
                       })()}
                     </div>
                   </section>
+                  ) : null}
 
+                  {isNoticeDay ? (
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <section className="rounded-md border border-line p-5">
                       <h2 className="text-[18px] font-semibold text-foreground">
@@ -554,8 +562,9 @@ export function NoticeDetail({
                       </div>
                     </section>
                   </div>
+                  ) : null}
 
-                  {learningReferences.length ? (
+                  {isNoticeDay && learningReferences.length ? (
                     <section className="space-y-4">
                       <h2 className="text-[18px] font-semibold text-foreground">
                         {t("learning_title")}
@@ -580,11 +589,13 @@ export function NoticeDetail({
                   ) : null}
                 </div>
 
+                {isNoticeDay ? (
                 <footer className="mt-8 border-t border-line pt-4 text-center">
                   <p className="text-[12px] text-muted">
                     {t("notice_modal_footer", { date: DEMO_TODAY })}
                   </p>
                 </footer>
+                ) : null}
               </>
             )}
           </div>
